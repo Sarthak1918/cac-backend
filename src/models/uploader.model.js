@@ -2,7 +2,7 @@ import mongoose, { Schema } from "mongoose"
 import bcrypt from "bcrypt"
 import jwt from "jsonwebtoken"
 
-const  userSchema = new Schema({
+const uploaderSchema = new Schema({
     email : {
         type : String,
         required : true,
@@ -27,9 +27,9 @@ const  userSchema = new Schema({
     },
     isInstructor : {
         type : Boolean,
-        default : false
+        default : true
     },
-    optedCourses : [
+    uploadedCourses : [
         {
             type : mongoose.Schema.Types.ObjectId,
             ref : "Course"
@@ -38,7 +38,7 @@ const  userSchema = new Schema({
 },{timestamps:true})
 
 
-    userSchema.pre("save", async function(next){
+uploaderSchema.pre("save", async function(next){
         if(!this.isModified("password")) return next()
         this.password = await bcrypt.hash(this.password,8)
         next()
@@ -46,15 +46,14 @@ const  userSchema = new Schema({
 
 
     //jwt is bearer token means when any user(person) sent this token we accept him/her as user and we send data
-    userSchema.methods.isPasswordCorrect = async function(password){
+    uploaderSchema.methods.isPasswordCorrect = async function(password){
        return await bcrypt.compare(password,this.password)
     }
-    userSchema.methods.generateAccessToken = function(){
+    uploaderSchema.methods.generateAccessToken = function(){
        return jwt.sign(
         {
         _id : this._id,
         email : this.email,
-        username : this.username,
         fullName : this.fullName
        },
        process.env.ACCESS_TOKEN_SECRET,
@@ -63,7 +62,7 @@ const  userSchema = new Schema({
        }
        )
     }
-    userSchema.methods.generateRefreshToken = function(){
+    uploaderSchema.methods.generateRefreshToken = function(){
        return jwt.sign(
         {
         _id : this._id
@@ -77,4 +76,4 @@ const  userSchema = new Schema({
    
 
 
-export const User = mongoose.model("User",userSchema);
+export const Uploader = mongoose.model("Uploader",uploaderSchema);
