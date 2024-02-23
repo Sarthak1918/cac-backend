@@ -19,22 +19,31 @@ const  userSchema = new Schema({
         required : [true,"Password is required"]
     },
     avatar : {
-        type : String,
-        required : true
+        public_id :{
+            type : String,
+            required : true
+        },
+        url :{
+            type : String,
+            required : true
+        }
     },
+    optedCourses : [
+        {
+            course:{ //id of the course from "Course" will be stored
+                type : mongoose.Schema.Types.ObjectId,
+                ref : "Course"
+            },
+            poster :String,
+        }
+    ],
     refreshToken:{
         type : String
     },
     isInstructor : {
         type : Boolean,
         default : false
-    },
-    optedCourses : [
-        {
-            type : mongoose.Schema.Types.ObjectId,
-            ref : "Course"
-        }
-    ]
+    }
 },{timestamps:true})
 
 

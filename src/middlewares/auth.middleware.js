@@ -22,6 +22,9 @@ const verifyUserJWT = asyncHandler(async(req,res,next)=>{
         throw new ApiError(401,error?.message || "Invalid Access Token")
     }
 })
+
+
+
 const verifyUploaderJWT = asyncHandler(async(req,res,next)=>{
     try {
         const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ","")

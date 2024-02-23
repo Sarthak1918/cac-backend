@@ -4,6 +4,7 @@ import { Uploader } from "../models/uploader.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { uploadFileOnCloudinary } from "../utils/Cloudinary.js";
 import jwt from "jsonwebtoken"
+import { Course } from "../models/course.model.js";
 
 
 const generateAccessAndRefreshToken = async (userId) => {
@@ -23,16 +24,8 @@ const generateAccessAndRefreshToken = async (userId) => {
 }
 
 
-const registerUploader = asyncHandler(async (req, res) => {
-    //get user details from frontend
-    //validation - not empty(main checking)
-    //check is user already exists-email
-    //create user object - create entry in db
-    //remove password and refresh token field from response(user object)
-    //check for user creation
-    //return response
-
-
+export const registerUploader = asyncHandler(async (req, res) => {
+    
     const { fullName, email, password } = req.body
 
     if ([fullName, email, password].some((field) => (field?.trim() === ""))) {
@@ -45,22 +38,22 @@ const registerUploader = asyncHandler(async (req, res) => {
         throw new ApiError(409, "Instructor with same email already exists")
     } else {
 
-        const avatarLocalPath = req.file.path;
-        console.log(avatarLocalPath);
+        // const avatarLocalPath = req.file.path;
+        // console.log(avatarLocalPath);
 
-        if (!avatarLocalPath) {
-            throw new ApiError(400, "avatar required")
+        // if (!avatarLocalPath) {
+        //     throw new ApiError(400, "avatar required")
 
-        }
+        // }
 
-        const avatar = await uploadFileOnCloudinary(avatarLocalPath)
-        console.log(avatar);
+        // const avatar = await uploadFileOnCloudinary(avatarLocalPath)
+        // console.log(avatar);
 
         const newUploader = await Uploader.create({
             fullName,
             email,
             password,
-            avatar: avatar.url,
+            // avatar: avatar.url,
             isInstructor :true
         })
 
@@ -76,7 +69,7 @@ const registerUploader = asyncHandler(async (req, res) => {
 
 })
 
-const loginUploader = asyncHandler(async(req,res)=>{
+export const loginUploader = asyncHandler(async(req,res)=>{
     const{email ,password} = req.body;
 
     if(!email){
@@ -118,7 +111,7 @@ const loginUploader = asyncHandler(async(req,res)=>{
 
 })
 
-const logoutUploader = asyncHandler(async (req, res) => {
+export const logoutUploader = asyncHandler(async (req, res) => {
     const uploaderId = req.uploader._id;
     await Uploader.findByIdAndUpdate(uploaderId,
         {
@@ -143,5 +136,32 @@ const logoutUploader = asyncHandler(async (req, res) => {
 
 })
 
+export const createCourse = asyncHandler(async(req,res)=>{
 
-export { registerUploader,loginUploader,logoutUploader }
+    const {courseTitle,description,category,createdBy} = req.body
+    if([courseTitle,description,category,createdBy].some((field) => (field?.trim() === ""))){
+        throw new ApiError(400,"All fields are mandatory")
+    }
+    
+    // const file = req.file
+    //get file and get the uri
+    //upload to cloudinary,
+    //provide public_id and secure_url 
+
+    const courses = await Course.create({
+        courseTitle,description,category,createdBy,
+        poster :{
+            public_id : "temp",
+            url : "temp"
+        }
+    })
+    return res.status(200).json(
+        new ApiResponse(200,courses,"course added")
+    )
+})
+
+
+export const addLecture = asyncHandler(async(req,res)=>{
+    
+})
+

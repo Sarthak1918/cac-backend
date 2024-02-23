@@ -4,6 +4,7 @@ import { User } from "../models/user.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { uploadFileOnCloudinary } from "../utils/Cloudinary.js";
 import jwt from "jsonwebtoken"
+import { Course } from "../models/course.model.js";
 
 
 const generateAccessAndRefreshToken = async (userId) => {
@@ -23,7 +24,7 @@ const generateAccessAndRefreshToken = async (userId) => {
 }
 
 
-const registerUser = asyncHandler(async (req, res) => {
+export const registerUser = asyncHandler(async (req, res) => {
     //get user details from frontend
     //validation - not empty(main checking)
     //check is user already exists-email
@@ -45,22 +46,22 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new ApiError(409, "User with same email already exists")
     } else {
 
-        const avatarLocalPath = req.file.path;
-        console.log(avatarLocalPath);
+        // const avatarLocalPath = req.file.path;
+        // console.log(avatarLocalPath);
 
-        if (!avatarLocalPath) {
-            throw new ApiError(400, "avatar required")
+        // if (!avatarLocalPath) {
+        //     throw new ApiError(400, "avatar required")
 
-        }
+        // }
 
-        const avatar = await uploadFileOnCloudinary(avatarLocalPath)
-        console.log(avatar);
+        // const avatar = await uploadFileOnCloudinary(avatarLocalPath)
+        // console.log(avatar);
 
         const newUser = await User.create({
             fullName,
             email,
             password,
-            avatar: avatar.url
+            // avatar: avatar.url
         })
 
         const userCreated = await User.findById(newUser._id).select("-password -refreshToken")  // checking if the new user is available on mongodb
@@ -75,7 +76,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
 })
 
-const loginUser = asyncHandler(async (req, res) => {
+export const loginUser = asyncHandler(async (req, res) => {
     const { email, password } = req.body
     if (!email) {
         throw new ApiError(400, "email is required")
@@ -112,7 +113,7 @@ const loginUser = asyncHandler(async (req, res) => {
         )
 })
 
-const logoutUser = asyncHandler(async (req, res) => {
+export const logoutUser = asyncHandler(async (req, res) => {
     const userId = req.user._id;
     await User.findByIdAndUpdate(userId,
         {
@@ -137,7 +138,7 @@ const logoutUser = asyncHandler(async (req, res) => {
 
 })
 
-const refreshAccessToken = asyncHandler(async (req, res) => {
+export const refreshAccessToken = asyncHandler(async (req, res) => {
     const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
     if (!incomingRefreshToken) {
         throw new ApiError(401, "Unauthorized Access")
@@ -176,7 +177,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
 })
 
-const updatePassword = asyncHandler(async(req,res)=>{
+export const updatePassword = asyncHandler(async(req,res)=>{
     const {oldPassword,newPassword} = req.body;
     const  user = await User.findById(req.user?._id)
     const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
@@ -193,14 +194,14 @@ const updatePassword = asyncHandler(async(req,res)=>{
     )
 })
 
-const getCurrentUser = asyncHandler(async(req,res)=>{
+export const getCurrentUser = asyncHandler(async(req,res)=>{
     const currentUser = req.user
     return res.status(200).json(
         new ApiResponse(200,currentUser,"Current user fetched successfully")
     )
 })
 
-const updateAccountDetails = asyncHandler(async(req, res) => {
+export const updateAccountDetails = asyncHandler(async(req, res) => {
     const {fullName} = req.body
 
     if (!fullName) {
@@ -224,10 +225,52 @@ const updateAccountDetails = asyncHandler(async(req, res) => {
     .json(new ApiResponse(200, user, "Account details updated successfully"))
 });
 
-// const changeAvatar = asyncHandler(async(req,res)=>{
+//export const changeAvatar = asyncHandler(async(req,res)=>{
 
 // })
 
 
 
-export { registerUser, loginUser, logoutUser,refreshAccessToken,updatePassword,getCurrentUser,updateAccountDetails }
+
+
+//courses related functions - getAllCourses,getParticular course
+
+//BEFORE ENROLLMENT-(FOR ALL USERS)
+export const getAllCourses = asyncHandler(async(req,res)=>{
+    const courses = await Course.find().select("-lectures") //here we are showing all the courses.so we will not show lectures
+    if(!courses){
+        throw new ApiError(404,"No courses available")
+    }
+    return res.status(200).json(
+        new ApiResponse(200,courses,"Courses Fetched Successfully")
+    )
+})
+
+//we will use the following api when we want to display course description
+export const getCourseDetails = asyncHandler(async(req,res)=>{
+    const course = await Course.findById(req.params.id)
+    if(!course){
+        throw new ApiError(400,"course does not exists")
+    }
+    return res.status(200).json(
+        new ApiResponse(200,course,"Courses Fetched Successfully")
+    )
+})
+
+
+
+//will se the following api when the user enrolled and want to see the videos.
+// export const getCourseLectures = asyncHandler(async(req,res)=>{
+//     const course = await Course.findById(req.params.id)
+//     const courses = await Course.find().select("-lectures") //here we are showing all the courses.so we will not show lectures
+//     if(!courses){
+//         throw new ApiError(404,"No courses available")
+//     }
+//     return res.status(200).json(
+//         new ApiResponse(200,courses,"Courses Fetched Successfully")
+//     )
+// })
+
+
+
+// export { registerUser, loginUser, logoutUser,refreshAccessToken,updatePassword,getCurrentUser,updateAccountDetails }

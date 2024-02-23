@@ -18,8 +18,8 @@ import userRouter from "./routes/userRoutes/user.routes.js"
 import uploaderRouter from "./routes/uploaderRoutes/uploader.routes.js"
 
 //routes declaration
-app.use("/api/v1/users",userRouter)
-app.use("/api/v1/uploaders",uploaderRouter)
+app.use("/api/v1/user",userRouter)
+app.use("/api/v1/uploader",uploaderRouter)
 
 
 export { app }

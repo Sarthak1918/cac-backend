@@ -19,8 +19,14 @@ const uploaderSchema = new Schema({
         required : [true,"Password is required"]
     },
     avatar : {
-        type : String,
-        required : true
+        public_id :{
+            type : String,
+            required : true
+        },
+        url :{
+            type : String,
+            required : true
+        }
     },
     refreshToken:{
         type : String
@@ -31,8 +37,11 @@ const uploaderSchema = new Schema({
     },
     uploadedCourses : [
         {
-            type : mongoose.Schema.Types.ObjectId,
-            ref : "Course"
+            course:{ //id of the course from "Course" will be stored
+                type : mongoose.Schema.Types.ObjectId,
+                ref : "Course"
+            },
+            poster :String,
         }
     ]
 },{timestamps:true})

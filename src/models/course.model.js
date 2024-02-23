@@ -1,37 +1,73 @@
 import mongoose, { Schema } from "mongoose"
 
 const courseSchema = new Schema({
-    courseTitle : {
-        type : String,//Cloudinary url
-        required : true,
+    courseTitle: {
+        type: String,//Cloudinary url
+        required: true,
     },
-    thumbnail : {
-        type : String,//Cloudinary url
-        required : true,
+    description: {
+        type: String,
+        required: true
     },
-    description : {
+    isPublished: {
+        type: Boolean,
+        default: true
+    },
+    lectures: [
+        {
+            title: {
+                type: String,
+                required: true
+            },
+            description: {
+                type: String,
+                required: true
+            },
+            video: {
+                public_id: {
+                    type: String,
+                    required: true
+                },
+                url: {
+                    type: String,
+                    required: true
+                }
+            }
+        }
+    ],
+    poster: {
+        public_id: {
+            type: String,
+            required: true
+        },
+        url: {
+            type: String,
+            required: true
+        }
+    },
+    numOfVideos : {
+        type : Number,
+        default : 0
+    },
+    category : {
         type : String,
         required : true
     },
-    isPublished  : {
-        type : Boolean,
-        default : true
+    createdBy:{
+        type :String,
+        required : [true,"Enter Uploader Name"]
     },
-    owner : { //uploader
-        type : mongoose.Schema.Types.ObjectId,
-        ref : "User"
-    },
-    videos : [
-        {
-            type : mongoose.Schema.Types.ObjectId,
-            ref : "Video"
+
+    document: {
+        public_id: {
+            type: String,
+        },
+        url: {
+            type: String,
         }
-    ],
-    document :{
-            type : String, //url of the document
-        }
-    
-},{timestamps : true})
+    }
+
+}, { timestamps: true })
 
 
-export const Course = mongoose.model("Course",courseSchema)
+export const Course = mongoose.model("Course", courseSchema)
