@@ -1,5 +1,6 @@
 import {v2 as cloudinary} from 'cloudinary';
 import fs from "fs"
+import { ApiError } from './ApiError.js';
 
 cloudinary.config({ 
   cloud_name: process.env.CLOUDINARY_NAME,
@@ -31,7 +32,7 @@ export const deleteVideoOnCloudinary = async(publicId)=>{
       "resource_type" : "video"
     })
   } catch (error) {
-    console.log("cloudinary video delete error");
+    throw new ApiError(500,"Video not deleted from cloudinary")
   }
 }
 export const deleteImageOnCloudinary = async(publicId)=>{
@@ -40,7 +41,7 @@ export const deleteImageOnCloudinary = async(publicId)=>{
       "resource_type" : "image"
     })
   } catch (error) {
-    console.log("cloudinary image delete error");
+    throw new ApiError(500,"image not deleted from cloudinary")
   }
 }
 
@@ -49,7 +50,7 @@ export const deleteDocOnCloudinary = async(publicId)=>{
   try {
     await cloudinary.uploader.destroy(publicId)
   } catch (error) {
-    console.log("cloudinary image delete error");
+    throw new ApiError(500,"document not deleted from cloudinary")
   }
 }
 

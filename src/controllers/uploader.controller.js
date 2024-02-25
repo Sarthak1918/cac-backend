@@ -368,7 +368,7 @@ export const deleteLecture = asyncHandler(async (req, res) => {
         throw new ApiError(404,"Lecture not found")
     }
 
-    deleteVideoOnCloudinary(lecture.public_id)
+    deleteVideoOnCloudinary(lecture.video.public_id)
 
     course.lectures = course.lectures.filter((lecture)=>lecture._id.toString()!==lectureId.toString())
 
