@@ -30,11 +30,14 @@ const  userSchema = new Schema({
     },
     optedCourses : [
         {
-            course:{ //id of the course from "Course" will be stored
+            courseId:{ //id of the course from "Course" will be stored
                 type : mongoose.Schema.Types.ObjectId,
                 ref : "Course"
             },
-            poster :String,
+            courseTitle : {
+                type : String,
+                required : true
+            }
         }
     ],
     refreshToken:{

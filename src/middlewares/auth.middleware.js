@@ -4,7 +4,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { User } from "../models/user.model.js";
 import { Uploader } from "../models/uploader.model.js";
 
-const verifyUserJWT = asyncHandler(async(req,res,next)=>{
+export const verifyUserJWT = asyncHandler(async(req,res,next)=>{
     try {
         const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ","")
         if(!token){
@@ -24,8 +24,29 @@ const verifyUserJWT = asyncHandler(async(req,res,next)=>{
 })
 
 
+// const checkUserJWT = asyncHandler(async(req,res,next)=>{
+//     try {
+//         const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ","")
+//         if(token){
+//             const decodedToken = jwt.verify(token,process.env.ACCESS_TOKEN_SECRET)
+//             const user = await User.findById(decodedToken?._id).select("-password -refreshToken")
+//             if(user){
+//                 req.user = user
+//             }
+//         }
+        
+    
+     
+//     } catch (error) {
+//         console.log(error);
+//     }
 
-const verifyUploaderJWT = asyncHandler(async(req,res,next)=>{
+//     next()
+// })
+
+
+
+export const verifyUploaderJWT = asyncHandler(async(req,res,next)=>{
     try {
         const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ","")
         if(!token){
@@ -43,5 +64,3 @@ const verifyUploaderJWT = asyncHandler(async(req,res,next)=>{
         throw new ApiError(401,error?.message || "Invalid Access Token")
     }
 })
-
-export {verifyUserJWT,verifyUploaderJWT}

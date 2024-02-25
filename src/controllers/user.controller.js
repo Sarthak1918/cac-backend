@@ -2,9 +2,10 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { uploadFileOnCloudinary } from "../utils/Cloudinary.js";
+import { uploadFileOnCloudinary} from "../utils/Cloudinary.js";
 import jwt from "jsonwebtoken"
 import { Course } from "../models/course.model.js";
+import fs from "fs"
 
 
 const generateAccessAndRefreshToken = async (userId) => {
@@ -43,25 +44,29 @@ export const registerUser = asyncHandler(async (req, res) => {
     const existedUser = await User.findOne({ email })
 
     if (existedUser) {
+        const avatarLocalPath = req?.file.path;
+        fs.unlinkSync(avatarLocalPath)
         throw new ApiError(409, "User with same email already exists")
     } else {
 
-        // const avatarLocalPath = req.file.path;
+        const avatarLocalPath = req.file.path;
         // console.log(avatarLocalPath);
+        
+        if (!avatarLocalPath) {
+                throw new ApiError(400, "avatar required")
+        }
 
-        // if (!avatarLocalPath) {
-        //     throw new ApiError(400, "avatar required")
-
-        // }
-
-        // const avatar = await uploadFileOnCloudinary(avatarLocalPath)
+        const avatar = await uploadFileOnCloudinary(avatarLocalPath)
         // console.log(avatar);
 
         const newUser = await User.create({
             fullName,
             email,
             password,
-            // avatar: avatar.url
+            avatar: {
+                public_id : avatar.public_id,
+                url : avatar.secure_url
+            }
         })
 
         const userCreated = await User.findById(newUser._id).select("-password -refreshToken")  // checking if the new user is available on mongodb
@@ -201,29 +206,29 @@ export const getCurrentUser = asyncHandler(async(req,res)=>{
     )
 })
 
-export const updateAccountDetails = asyncHandler(async(req, res) => {
-    const {fullName} = req.body
+// export const updateAccountDetails = asyncHandler(async(req, res) => {
+//     const {fullName} = req.body
 
-    if (!fullName) {
-        throw new ApiError(400, "full name required")
-    }
+//     if (!fullName) {
+//         throw new ApiError(400, "full name required")
+//     }
 
-    const user = await User.findByIdAndUpdate(
-        req.user?._id,
-        {
-            $set: {
-                fullName : fullName,
-                email: email
-            }
-        },
-        {new: true}
+//     const user = await User.findByIdAndUpdate(
+//         req.user?._id,
+//         {
+//             $set: {
+//                 fullName : fullName,
+//                 email: email
+//             }
+//         },
+//         {new: true}
         
-    ).select("-password")
+//     ).select("-password")
 
-    return res
-    .status(200)
-    .json(new ApiResponse(200, user, "Account details updated successfully"))
-});
+//     return res
+//     .status(200)
+//     .json(new ApiResponse(200, user, "Account details updated successfully"))
+// });
 
 //export const changeAvatar = asyncHandler(async(req,res)=>{
 
@@ -236,30 +241,31 @@ export const updateAccountDetails = asyncHandler(async(req, res) => {
 //courses related functions - getAllCourses,getParticular course
 
 //BEFORE ENROLLMENT-(FOR ALL USERS)
-export const getAllCourses = asyncHandler(async(req,res)=>{
-    const courses = await Course.find().select("-lectures") //here we are showing all the courses.so we will not show lectures
-    if(!courses){
-        throw new ApiError(404,"No courses available")
-    }
-    return res.status(200).json(
-        new ApiResponse(200,courses,"Courses Fetched Successfully")
-    )
-})
-
-//we will use the following api when we want to display course description
-export const getCourseDetails = asyncHandler(async(req,res)=>{
-    const course = await Course.findById(req.params.id)
-    if(!course){
-        throw new ApiError(400,"course does not exists")
-    }
-    return res.status(200).json(
-        new ApiResponse(200,course,"Courses Fetched Successfully")
-    )
-})
+// export const getAllCourses = asyncHandler(async(req,res)=>{
+//     const courses = await Course.find().select("-lectures") //here we are showing all the courses.so we will not show lectures
+//     if(!courses){
+//         throw new ApiError(404,"No courses available")
+//     }
+//     return res.status(200).json(
+//         new ApiResponse(200,courses,"Courses Fetched Successfully")
+//     )
+// })
 
 
+// //we will use the following api when we want to display course description
+// export const getCourseDetails = asyncHandler(async(req,res)=>{
+//     const course = await Course.findById(req.params.id)
+//     if(!course){
+//         throw new ApiError(400,"course does not exists")
+//     }
+//     return res.status(200).json(
+//         new ApiResponse(200,course,"Courses Fetched Successfully")
+//     )
+// })
 
-//will se the following api when the user enrolled and want to see the videos.
+
+
+// //will se the following api when the user enrolled and want to see the videos.
 // export const getCourseLectures = asyncHandler(async(req,res)=>{
 //     const course = await Course.findById(req.params.id)
 //     const courses = await Course.find().select("-lectures") //here we are showing all the courses.so we will not show lectures
