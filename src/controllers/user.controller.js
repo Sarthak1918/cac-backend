@@ -230,9 +230,6 @@ export const getCurrentUser = asyncHandler(async(req,res)=>{
 //     .json(new ApiResponse(200, user, "Account details updated successfully"))
 // });
 
-//export const changeAvatar = asyncHandler(async(req,res)=>{
-
-// })
 
 
 
@@ -252,30 +249,11 @@ export const getCurrentUser = asyncHandler(async(req,res)=>{
 // })
 
 
-// //we will use the following api when we want to display course description
-// export const getCourseDetails = asyncHandler(async(req,res)=>{
-//     const course = await Course.findById(req.params.id)
-//     if(!course){
-//         throw new ApiError(400,"course does not exists")
-//     }
-//     return res.status(200).json(
-//         new ApiResponse(200,course,"Courses Fetched Successfully")
-//     )
-// })
 
 
 
-// //will se the following api when the user enrolled and want to see the videos.
-// export const getCourseLectures = asyncHandler(async(req,res)=>{
-//     const course = await Course.findById(req.params.id)
-//     const courses = await Course.find().select("-lectures") //here we are showing all the courses.so we will not show lectures
-//     if(!courses){
-//         throw new ApiError(404,"No courses available")
-//     }
-//     return res.status(200).json(
-//         new ApiResponse(200,courses,"Courses Fetched Successfully")
-//     )
-// })
+
+
 
 
 

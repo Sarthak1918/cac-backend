@@ -277,7 +277,7 @@ export const deleteCourse = asyncHandler(async (req, res) => {
     const course = await Course.findById(courseId)
     deleteImageOnCloudinary(course.poster.public_id)
     deleteDocOnCloudinary(course.document.public_id)
-    for(let i = 0;i<course.lectures.length;i++){
+    for (let i = 0; i < course.lectures.length; i++) {
         const singleLecture = course.lectures[i]
         deleteVideoOnCloudinary(singleLecture.video.public_id)
     }
@@ -291,27 +291,50 @@ export const deleteCourse = asyncHandler(async (req, res) => {
 })
 
 export const editCourse = asyncHandler(async (req, res) => {
-    const { courseTitle, price, description } = req.body
 
-    //     if (!fullName) {
-    //         throw new ApiError(400, "full name required")
-    //     }
+    const courseId = req.params.courseId
+    if (!courseId) {
+        throw new ApiError(404, "Provide course id")
+    }
+    const uploader = await Uploader.findById(req.uploader?._id)
+    const { courseTitle, price, description, category } = req.body
+    
 
-    //     const user = await User.findByIdAndUpdate(
-    //         req.user?._id,
-    //         {
-    //             $set: {
-    //                 fullName : fullName,
-    //                 email: email
-    //             }
-    //         },
-    //         {new: true}
+    if ([courseTitle, description, category, price].some((field) => (field?.toString().trim() === ""))) {
+        throw new ApiError(400, "All fields are mandatory")
+    }
 
-    //     ).select("-password")
+    if (uploader.uploadedCourses.length > 0) {
+        uploader.uploadedCourses.map((course) => {
+            if (course.courseTitle === courseTitle) {
+                throw new ApiError(409, "Course with same course title already exists")
+            }
+        })
+    }
 
-    //     return res
-    //     .status(200)
-    //     .json(new ApiResponse(200, user, "Account details updated successfully"))
+    const course = await Course.findOneAndUpdate(
+        {_id : courseId},
+        {
+            $set: {
+                courseTitle: courseTitle,
+                description: description,
+                price: price,
+                category: category
+            }
+        },
+        { new: true }
+    )
+
+
+    //todo
+    // save also in uploader > uploaded courses.
+    const uploaderCourse = uploader.uploadedCourses.find((course)=>course.courseId.toString() === courseId.toString())
+    uploaderCourse.courseTitle = courseTitle
+    await uploader.save()
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, {course : course}, "course updated successfully"))
 })
 
 
@@ -339,7 +362,7 @@ export const addLecture = asyncHandler(async (req, res) => {
         }
     })
     course.numOfVideos = course.lectures.length
-    await course.save({validateBeforeSave : false})
+    await course.save({ validateBeforeSave: false })
 
     return res.status(200).json(
         new ApiResponse(200,
@@ -355,34 +378,36 @@ export const addLecture = asyncHandler(async (req, res) => {
 })
 
 export const deleteLecture = asyncHandler(async (req, res) => {
-    const {courseId,lectureId} = req.query;
+    const { courseId, lectureId } = req.query;
     const course = await Course.findById(courseId);
 
-    if(!course){
+    if (!course) {
         throw new ApiError("Course no found")
     }
 
-    const lecture = course.lectures.find((lecture)=>lecture._id.toString()===lectureId.toString())
-    
-    if(!lecture){
-        throw new ApiError(404,"Lecture not found")
+    const lecture = course.lectures.find((lecture) => lecture._id.toString() === lectureId.toString())
+
+    if (!lecture) {
+        throw new ApiError(404, "Lecture not found")
     }
 
     deleteVideoOnCloudinary(lecture.video.public_id)
 
-    course.lectures = course.lectures.filter((lecture)=>lecture._id.toString()!==lectureId.toString())
+    course.lectures = course.lectures.filter((lecture) => lecture._id.toString() !== lectureId.toString())
 
     course.numOfVideos = course.lectures.length
-    await course.save({validateBeforeSave : false})
+    await course.save({ validateBeforeSave: false })
 
     return res.status(200).json(
-        new ApiResponse(200,null,"Lecture deleted Successfully")
+        new ApiResponse(200, null, "Lecture deleted Successfully")
     )
+
+
+
 })
 
-export const editLecture = asyncHandler(async (req, res) => {
 
-})
+
 
 
 

@@ -32,7 +32,7 @@ export const deleteVideoOnCloudinary = async(publicId)=>{
       "resource_type" : "video"
     })
   } catch (error) {
-    throw new ApiError(500,"Video not deleted from cloudinary")
+    console.log(error.message);
   }
 }
 export const deleteImageOnCloudinary = async(publicId)=>{
@@ -41,7 +41,7 @@ export const deleteImageOnCloudinary = async(publicId)=>{
       "resource_type" : "image"
     })
   } catch (error) {
-    throw new ApiError(500,"image not deleted from cloudinary")
+    console.log(error.message);
   }
 }
 
@@ -50,7 +50,7 @@ export const deleteDocOnCloudinary = async(publicId)=>{
   try {
     await cloudinary.uploader.destroy(publicId)
   } catch (error) {
-    throw new ApiError(500,"document not deleted from cloudinary")
+    console.log(error.message);
   }
 }
 
