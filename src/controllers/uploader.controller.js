@@ -142,17 +142,10 @@ export const logoutUploader = asyncHandler(async (req, res) => {
 })
 
 export const getCurrentUploader = asyncHandler(async (req, res) => {
-    const uploaderId = req.uploader._id
-    if (!uploaderId) {
-        throw new ApiError(401, "Unauthorized Access!Login First")
-    }
-    const uploader = await Uploader.findById(uploaderId).select("-password")
-    if (!uploader) {
-        throw new ApiError(401, "Uploader doesn't exists")
-    }
+    const currentUploader = req.uploader
     return res.status(200).json(new ApiResponse(200,
         {
-            uploader: uploader
+            uploader: currentUploader
         },
         "Current User details fetched successfully"
     ))
@@ -214,7 +207,12 @@ export const createCourse = asyncHandler(async (req, res) => {
 
     uploader.uploadedCourses.push({
         courseId: newCourse._id,
-        courseTitle: newCourse.courseTitle
+        courseTitle: newCourse.courseTitle,
+        poster : {
+            public_id : cloudPoster.public_id,
+            url : cloudPoster.secure_url
+        },
+        numOfVideos : newCourse.numOfVideos
     });
 
     await uploader.save({ validateBeforeSave: false });

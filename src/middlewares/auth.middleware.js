@@ -24,25 +24,22 @@ export const verifyUserJWT = asyncHandler(async(req,res,next)=>{
 })
 
 
-// const checkUserJWT = asyncHandler(async(req,res,next)=>{
-//     try {
-//         const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ","")
-//         if(token){
-//             const decodedToken = jwt.verify(token,process.env.ACCESS_TOKEN_SECRET)
-//             const user = await User.findById(decodedToken?._id).select("-password -refreshToken")
-//             if(user){
-//                 req.user = user
-//             }
-//         }
-        
-    
-     
-//     } catch (error) {
-//         console.log(error);
-//     }
+export const checkUserJWT = asyncHandler(async(req,res,next)=>{
+    try {
+        const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ","")
+        if(token){
+            const decodedToken = jwt.verify(token,process.env.ACCESS_TOKEN_SECRET)
+            const user = await User.findById(decodedToken?._id).select("-password -refreshToken")
+            if(user){
+                req.user = user
+            }
+        }
+    } catch (error) {
+        console.log(error);
+    }
 
-//     next()
-// })
+    next()
+})
 
 
 

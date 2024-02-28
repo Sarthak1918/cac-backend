@@ -26,15 +26,6 @@ const generateAccessAndRefreshToken = async (userId) => {
 
 
 export const registerUser = asyncHandler(async (req, res) => {
-    //get user details from frontend
-    //validation - not empty(main checking)
-    //check is user already exists-email
-    //create user object - create entry in db
-    //remove password and refresh token field from response(user object)
-    //check for user creation
-    //return response
-
-
     const { fullName, email, password } = req.body
 
     if ([fullName, email, password].some((field) => (field?.trim() === ""))) {
@@ -202,33 +193,13 @@ export const updatePassword = asyncHandler(async(req,res)=>{
 export const getCurrentUser = asyncHandler(async(req,res)=>{
     const currentUser = req.user
     return res.status(200).json(
-        new ApiResponse(200,currentUser,"Current user fetched successfully")
+        new ApiResponse(200,{
+            user : currentUser
+        },"Current user fetched successfully")
     )
 })
 
-// export const updateAccountDetails = asyncHandler(async(req, res) => {
-//     const {fullName} = req.body
 
-//     if (!fullName) {
-//         throw new ApiError(400, "full name required")
-//     }
-
-//     const user = await User.findByIdAndUpdate(
-//         req.user?._id,
-//         {
-//             $set: {
-//                 fullName : fullName,
-//                 email: email
-//             }
-//         },
-//         {new: true}
-        
-//     ).select("-password")
-
-//     return res
-//     .status(200)
-//     .json(new ApiResponse(200, user, "Account details updated successfully"))
-// });
 
 
 
@@ -237,16 +208,83 @@ export const getCurrentUser = asyncHandler(async(req,res)=>{
 
 //courses related functions - getAllCourses,getParticular course
 
-//BEFORE ENROLLMENT-(FOR ALL USERS)
-// export const getAllCourses = asyncHandler(async(req,res)=>{
-//     const courses = await Course.find().select("-lectures") //here we are showing all the courses.so we will not show lectures
-//     if(!courses){
-//         throw new ApiError(404,"No courses available")
-//     }
-//     return res.status(200).json(
-//         new ApiResponse(200,courses,"Courses Fetched Successfully")
-//     )
-// })
+export const getAllCourses = asyncHandler(async(req,res)=>{
+    const courses = await Course.find().select("-lectures") //here we are showing all the courses.so we will not show lectures
+    if(!courses){
+        throw new ApiError(404,"No courses available")
+    }
+    return res.status(200).json(
+        new ApiResponse(200,
+            {
+                courses : courses
+            }
+            ,"Courses Fetched Successfully")
+    )
+})
+
+export const enrollCourse = asyncHandler(async(req,res)=>{
+    const user = req.user
+    const {courseId} = req.params
+
+    const isOptedCourse = user.optedCourses.some((course)=>course.courseId.toString()===courseId.toString())
+    console.log((isOptedCourse));
+    const course = await Course.findById(courseId)
+    user.optedCourses.push({
+        courseId: course._id,
+        courseTitle: course.courseTitle
+    });
+
+    await user.save({ validateBeforeSave: false });
+
+    return res.status(200).json(
+        new ApiResponse(200,null,"Enrolled to the course successfully.Check opted courses")
+    )
+})
+
+
+export const getCourse = asyncHandler(async(req,res)=>{
+    const user = req.user
+    const {courseId} = req.params
+    const isOpted = user ? (
+        user.optedCourses.some((course)=>course.courseId.toString() === courseId)
+    ) : false;
+    const course = await Course.findById(courseId).select(`${(isOpted) ? "" : "-lectures"}`)
+    if(!course){
+        throw new ApiError(404,"course_not_found")
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200,
+            {
+                isLoggedIn: user ? true : false,
+                isOpted,
+                course : course
+            },
+            "Course Fetched Successfully"
+            )
+    )
+
+    
+})
+
+export const getMyCourses = asyncHandler(async(req,res)=>{
+    const user = req.user
+    const courses = [];
+    for (const cid of user.optedCourses) {
+        const course = await Course.findById(cid.courseId).select("-lectures");
+        course && courses.push(course);
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200,
+            {
+                courses : courses
+            },
+            "User Courses Fetched Successfully"
+            )
+    )
+
+})
 
 
 
@@ -257,4 +295,4 @@ export const getCurrentUser = asyncHandler(async(req,res)=>{
 
 
 
-// export { registerUser, loginUser, logoutUser,refreshAccessToken,updatePassword,getCurrentUser,updateAccountDetails }
+
