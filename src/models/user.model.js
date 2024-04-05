@@ -30,23 +30,12 @@ const  userSchema = new Schema({
     },
     optedCourses : [
         {
-            courseId:{ //id of the course from "Course" will be stored
-                type : mongoose.Schema.Types.ObjectId,
+            courseId : {
+                type : Schema.Types.ObjectId,
                 ref : "Course"
-            },
-            courseTitle : {
-                type : String,
-                required : true
             }
         }
     ],
-    refreshToken:{
-        type : String
-    },
-    isInstructor : {
-        type : Boolean,
-        default : false
-    }
 },{timestamps:true})
 
 
@@ -75,17 +64,17 @@ const  userSchema = new Schema({
        }
        )
     }
-    userSchema.methods.generateRefreshToken = function(){
-       return jwt.sign(
-        {
-        _id : this._id
-       },
-       process.env.REFRESH_TOKEN_SECRET,
-       {
-        expiresIn : process.env.REFRESH_TOKEN_EXPIRY
-       }
-       )
-    }
+    // userSchema.methods.generateRefreshToken = function(){
+    //    return jwt.sign(
+    //     {
+    //     _id : this._id
+    //    },
+    //    process.env.REFRESH_TOKEN_SECRET,
+    //    {
+    //     expiresIn : process.env.REFRESH_TOKEN_EXPIRY
+    //    }
+    //    )
+    // }
    
 
 

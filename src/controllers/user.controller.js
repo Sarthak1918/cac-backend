@@ -2,25 +2,23 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-import { uploadFileOnCloudinary} from "../utils/Cloudinary.js";
+import { uploadFileOnCloudinary } from "../utils/Cloudinary.js";
 import jwt from "jsonwebtoken"
 import { Course } from "../models/course.model.js";
 import fs from "fs"
 
 
-const generateAccessAndRefreshToken = async (userId) => {
+const generateAccessToken = async (userId) => {
     try {
         const user = await User.findById(userId)
         const accessToken = await user.generateAccessToken()
-        const refreshToken = await user.generateRefreshToken()
 
-        user.refreshToken = refreshToken
         await user.save({ validateBeforeSave: false })
 
-        return { accessToken, refreshToken }
+        return accessToken;
 
     } catch (error) {
-        throw new ApiError(500, "Error occued while generating access and refresh token")
+        throw new ApiError(500, "Error occued while generating access token")
     }
 }
 
@@ -42,9 +40,9 @@ export const registerUser = asyncHandler(async (req, res) => {
 
         const avatarLocalPath = req.file.path;
         // console.log(avatarLocalPath);
-        
+
         if (!avatarLocalPath) {
-                throw new ApiError(400, "avatar required")
+            throw new ApiError(400, "avatar required")
         }
 
         const avatar = await uploadFileOnCloudinary(avatarLocalPath)
@@ -55,14 +53,21 @@ export const registerUser = asyncHandler(async (req, res) => {
             email,
             password,
             avatar: {
-                public_id : avatar.public_id,
-                url : avatar.secure_url
+                public_id: avatar.public_id,
+                url: avatar.secure_url
             }
         })
+        
 
-        const userCreated = await User.findById(newUser._id).select("-password -refreshToken")  // checking if the new user is available on mongodb
+        const userCreated = await User.findById(newUser._id).select("-password")  // checking if the new user is available on mongodb
+        const AccessToken = await generateAccessToken(userCreated._id)
+        const cookieOptions = {
+            httpOnly: true,
+            secure: true,
+            maxAge:15*24*60*60*1000,
+        }
         if (userCreated) {
-            res.status(201).json(
+            res.status(201).cookie("AccessToken", AccessToken, cookieOptions).json(
                 new ApiResponse(200, userCreated, "User Created Successfully")
             )
         } else {
@@ -87,115 +92,54 @@ export const loginUser = asyncHandler(async (req, res) => {
         throw new ApiError(401, "Invalid  user credentials")
     }
 
-    const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id)
+    const AccessToken = await generateAccessToken(user._id)
 
-    const loggedInUser = await User.findById(user._id).select("-password -refreshToken")
+    const loggedInUser = await User.findById(user._id).select("-password")
+    console.log(AccessToken)
 
     const cookieOptions = {
         httpOnly: true,
-        secure: true
+        secure: true,
+        maxAge:15*24*60*60*1000,
     }
-    return res.status(200).cookie("accessToken", accessToken, cookieOptions)
-        .cookie("refreshToken", refreshToken, cookieOptions)
-        .json(
-            new ApiResponse(200,
-                {
-                    user: loggedInUser,
-                    accessToken,
-                    refreshToken
-                },
-                "User LoggedIn Successfully"
-            )
-        )
+    res.status(200).cookie("AccessToken", AccessToken, cookieOptions).json(new ApiResponse(200, loggedInUser, "User LoggedIn Successfully"))
 })
 
 export const logoutUser = asyncHandler(async (req, res) => {
-    const userId = req.user._id;
-    await User.findByIdAndUpdate(userId,
-        {
-            $set: {
-                refreshToken: undefined
-            }
-        },
-        {
-            new: true
-        }
-    )
-
     const options = {
         httpOnly: true,
-        secure: true
+        secure: true,
+        maxAge : 1
     }
 
     return res.status(200)
-        .clearCookie("accessToken", options)
-        .clearCookie("refreshToken", options)
-        .json(new ApiResponse(200, {}, "User logged out"))
+        .clearCookie("AccessToken", options).json(new ApiResponse(200, {}, "User logged out"))
 
 })
 
-export const refreshAccessToken = asyncHandler(async (req, res) => {
-    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
-    if (!incomingRefreshToken) {
-        throw new ApiError(401, "Unauthorized Access")
-    }
-    try {
-        const decodedToken = jwt.verify(refreshAccessToken, process.env.REFRESH_TOKEN_SECRET)
-        const user = await User.findById(decodedToken?._id)
-        if (!user) {
-            throw new ApiError(401, "Invalid refresh token")
-        }
-    
-        if (incomingRefreshToken !== user?.refreshToken) {
-            throw new ApiError(401, "refresh  token does not match")
-        }
-    
-        const options = {
-            httpOnly: true,
-            secure: true
-        }
-        const { accessToken: newAccessToken, refreshToken: newRefreshToken } = await generateAccessAndRefreshToken(user._id)
-        return res.status(200)
-            .cookie("accessToken", newAccessToken, options)
-            .cookie("refreshToken", newRefreshToken, options)
-            .json(
-                new ApiResponse(200,
-                    {
-                        accessToken: newAccessToken,
-                        refreshToken: newRefreshToken
-                    },
-                    "Access token refreshed"
-                )
-            )
-    } catch (error) {
-        throw new ApiError(401,"unauthorized access")
-    }
 
-})
 
-export const updatePassword = asyncHandler(async(req,res)=>{
-    const {oldPassword,newPassword} = req.body;
-    const  user = await User.findById(req.user?._id)
+export const updatePassword = asyncHandler(async (req, res) => {
+    const { oldPassword, newPassword } = req.body;
+    const user = await User.findById(req.user?._id)
     const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
 
-    if(!isPasswordCorrect){
-        throw new ApiError(400,"Invalid old password")
+    if (!isPasswordCorrect) {
+        throw new ApiError(400, "Invalid old password")
     }
 
     user.password = newPassword
-    await user.save({validateBeforeSave : false})
+    await user.save({ validateBeforeSave: false })
 
     return res.status(200).json(
-        new ApiResponse(200,{},"Password changed successfully")
+        new ApiResponse(200, {}, "Password changed successfully")
     )
 })
 
-export const getCurrentUser = asyncHandler(async(req,res)=>{
+export const getCurrentUser = asyncHandler(async (req, res) => {
     const currentUser = req.user
     return res.status(200).json(
-        new ApiResponse(200,{
-            user : currentUser
-        },"Current user fetched successfully")
+        new ApiResponse(200, currentUser, "Current user fetched successfully")
     )
 })
 
@@ -208,81 +152,85 @@ export const getCurrentUser = asyncHandler(async(req,res)=>{
 
 //courses related functions - getAllCourses,getParticular course
 
-export const getAllCourses = asyncHandler(async(req,res)=>{
-    const courses = await Course.find().select("-lectures") //here we are showing all the courses.so we will not show lectures
-    if(!courses){
-        throw new ApiError(404,"No courses available")
+export const getAllCourses = asyncHandler(async (req, res) => {
+    const courses = await Course.find({ isDeleted: false }).select("-lectures") //here we are showing all the courses.so we will not show lectures
+    if (!courses) {
+        throw new ApiError(404, "No courses available")
     }
     return res.status(200).json(
-        new ApiResponse(200,
-            {
-                courses : courses
-            }
-            ,"Courses Fetched Successfully")
+        new ApiResponse(200, courses, "Courses Fetched Successfully")
     )
 })
 
-export const enrollCourse = asyncHandler(async(req,res)=>{
+export const enrollCourse = asyncHandler(async (req, res) => {
     const user = req.user
-    const {courseId} = req.params
+    const { courseId } = req.params
 
-    const isOptedCourse = user.optedCourses.some((course)=>course.courseId.toString()===courseId.toString())
-    console.log((isOptedCourse));
+    const isOptedCourse = user.optedCourses.some((course) => course.courseId.toString() === courseId.toString())
+    if (isOptedCourse) {
+        throw new ApiError(403, "Already enrolled to the course")
+    }
     const course = await Course.findById(courseId)
-    user.optedCourses.push({
-        courseId: course._id,
-        courseTitle: course.courseTitle
-    });
+
+    if (!course) {
+        throw new ApiError(404, "Course with provided Id does not exists")
+    }
+
+    if (course.isDeleted) {
+        throw new ApiError(404, "Course with provided Id has been deleted")
+    }
+
+    user.optedCourses.push({courseId: course._id});
 
     await user.save({ validateBeforeSave: false });
 
     return res.status(200).json(
-        new ApiResponse(200,null,"Enrolled to the course successfully.Check opted courses")
+        new ApiResponse(200, null, "Enrolled to the course successfully")
     )
 })
 
 
-export const getCourse = asyncHandler(async(req,res)=>{
+export const getCourse = asyncHandler(async (req, res) => {
     const user = req.user
-    const {courseId} = req.params
+    const { courseId } = req.params
     const isOpted = user ? (
-        user.optedCourses.some((course)=>course.courseId.toString() === courseId)
+        user.optedCourses.some((course) => course.courseId.toString() === courseId)
     ) : false;
     const course = await Course.findById(courseId).select(`${(isOpted) ? "" : "-lectures"}`)
-    if(!course){
-        throw new ApiError(404,"course_not_found")
+    if (!course) {
+        throw new ApiError(404, "course_not_found")
     }
+
+    if (course.isDeleted) {
+        throw new ApiError(404, "course_was_deleted")
+    }
+
+    course.lectures = course.lectures.filter(lecture => lecture.isDeleted === false)
 
     return res.status(200).json(
         new ApiResponse(200,
             {
                 isLoggedIn: user ? true : false,
                 isOpted,
-                course : course
+                course: course,
             },
             "Course Fetched Successfully"
-            )
+        )
     )
 
-    
+
 })
 
-export const getMyCourses = asyncHandler(async(req,res)=>{
+export const getMyCourses = asyncHandler(async (req, res) => {
     const user = req.user
     const courses = [];
-    for (const cid of user.optedCourses) {
-        const course = await Course.findById(cid.courseId).select("-lectures");
-        course && courses.push(course);
+    for (const c of user.optedCourses) {
+        const course = await Course.findById(c.courseId).select("-lectures");
+        course && !course.isDeleted && courses.push(course);
     }
 
     return res.status(200).json(
-        new ApiResponse(200,
-            {
-                courses : courses
-            },
-            "User Courses Fetched Successfully"
-            )
-    )
+        new ApiResponse(200, courses, "User Courses Fetched Successfully"))
 
 })
 

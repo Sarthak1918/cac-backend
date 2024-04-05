@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { enrollCourse, getAllCourses, getCourse, getCurrentUser, getMyCourses, loginUser, logoutUser, refreshAccessToken, registerUser } from "../../controllers/user.controller.js";
+import { enrollCourse, getAllCourses, getCourse, getCurrentUser, getMyCourses, loginUser, logoutUser, registerUser } from "../../controllers/user.controller.js";
 import { upload } from "../../middlewares/multer.middleware.js";
 import { checkUserJWT, verifyUserJWT } from "../../middlewares/auth.middleware.js";
 
@@ -12,8 +12,7 @@ router.route("/register").post(
     registerUser
 )
 router.route("/login").post(loginUser)
-router.route("/logout").get(verifyUserJWT,logoutUser)
-router.route("/refresh-token").get(refreshAccessToken)
+router.route("/logout").get(logoutUser)
 
 router.route("/all-courses").get(getAllCourses)
 router.route("/my-courses").get(verifyUserJWT, getMyCourses)

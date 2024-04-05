@@ -2,7 +2,7 @@ import mongoose, { Schema } from "mongoose"
 
 const courseSchema = new Schema({
     courseTitle: {
-        type: String,//Cloudinary url
+        type: String,
         required: true,
     },
     description: {
@@ -13,9 +13,9 @@ const courseSchema = new Schema({
         type : Number,
         required :true
     },
-    isPublished: {
-        type: Boolean,
-        default: true
+    isDeleted:{
+        type:Boolean,
+        default : false
     },
     lectures: [
         {
@@ -26,6 +26,10 @@ const courseSchema = new Schema({
             description: {
                 type: String,
                 required: true
+            },
+            isDeleted:{
+                type:Boolean,
+                default : false
             },
             video: {
                 public_id: {
@@ -57,11 +61,15 @@ const courseSchema = new Schema({
         type : String,
         required : true
     },
-    createdBy:{
-        type :String,
-        required : [true,"Enter Uploader Name"]
+    uploaderId:{
+       type : mongoose.Schema.Types.ObjectId,
+       ref : "Uploader",
+       required:true
     },
-
+    uploaderName :{
+        type : String,
+        required :true
+    },
     document: {
         public_id: {
             type: String,
@@ -69,7 +77,14 @@ const courseSchema = new Schema({
         url: {
             type: String,
         }
-    }
+    },
+
+    optedBy: [{
+        userId : {
+            type : mongoose.Schema.Types.ObjectId,
+            ref : "User"
+        }
+    }]
 
 }, { timestamps: true })
 

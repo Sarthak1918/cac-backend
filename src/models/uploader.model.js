@@ -18,6 +18,15 @@ const uploaderSchema = new Schema({
         type : String,
         required : [true,"Password is required"]
     },
+    company:{
+        type:String,
+    },
+    designation:{
+        type:String
+    },
+    experience:{
+        type:Number
+    },
     avatar : {
         public_id :{
             type : String,
@@ -35,18 +44,12 @@ const uploaderSchema = new Schema({
         type : Boolean,
         default : true
     },
-    uploadedCourses : [
-        {
-            courseId:{ //id of the course from "Course" will be stored
-                type : mongoose.Schema.Types.ObjectId,
-                ref : "Course"
-            },
-            courseTitle : {
-                type : String,
-                required : true
-            }
+    uploadedCourses : [{
+        courseId : {
+            type : mongoose.Schema.Types.ObjectId,
+            ref : "Course"
         }
-    ]
+    }]
 },{timestamps:true})
 
 
@@ -74,17 +77,7 @@ uploaderSchema.pre("save", async function(next){
        }
        )
     }
-    uploaderSchema.methods.generateRefreshToken = function(){
-       return jwt.sign(
-        {
-        _id : this._id
-       },
-       process.env.REFRESH_TOKEN_SECRET,
-       {
-        expiresIn : process.env.REFRESH_TOKEN_EXPIRY
-       }
-       )
-    }
+  
    
 
 
